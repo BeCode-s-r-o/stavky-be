@@ -1,29 +1,38 @@
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
+const Sentry = require("@sentry/node");
+const path = require("path");
+
+const fontMediumPath = path.join(__dirname, "Roboto-Medium.ttf");
+const fontBoldPath = path.join(__dirname, "Roboto-Bold.ttf");
 
 function createInvoice(invoice, path) {
-  let doc = new PDFDocument({ size: "A4", margin: 50 });
-
-  generateHeader(doc, invoice);
-  generateCustomerInformation(doc, invoice);
-  generateInvoiceTable(doc, invoice);
-  generateFooter(doc);
-
-  doc.end();
-  doc.pipe(fs.createWriteStream(path));
+  try {
+    let doc = new PDFDocument({ size: "A4", margin: 50 });
+    generateHeader(doc, invoice);
+    generateCustomerInformation(doc, invoice);
+    generateInvoiceTable(doc, invoice);
+    generateFooter(doc);
+    doc.end();
+    doc.pipe(fs.createWriteStream(path));
+  } catch (err) {
+    Sentry.captureException(err);
+    console.log(err);
+  }
 }
 
 function generateHeader(doc, invoice) {
+  const imagePath = path.join(__dirname, `${invoice.pageType}.png`);
   doc
     .rect(50, 40, 120, 40)
     .fill(`${invoice.pageType === "forex" ? "#463acc" : "#3b055b"}`)
-    .image(`${invoice.pageType}.png`, 60, 45, {
+    .image(imagePath, 60, 45, {
       width: 100,
       align: "center",
       valign: "center",
     })
     .fillColor("#444444")
-    .font("./Roboto-Medium.ttf")
+    .font(fontMediumPath)
     .fontSize(10)
     .fillColor("#aaaaaa")
     .text("DODÁVATEĽ", 50, 95)
@@ -35,10 +44,10 @@ function generateHeader(doc, invoice) {
     .text("DIČ: 2121576897", 50, 170)
     .fillColor("#aaaaaa")
     .text("ODOBERATEĽ", 250, 95)
-    .font("./Roboto-Bold.ttf")
+    .font(fontBoldPath)
     .fillColor("#000000")
     .text(invoice.shipping.name, 250, 110)
-    .font("./Roboto-Medium.ttf")
+    .font(fontMediumPath)
     .text(invoice.shipping.address, 250, 125)
     .text(
       `${invoice.shipping.postal_code + ", " + invoice.shipping.city}`,
@@ -53,7 +62,7 @@ function generateCustomerInformation(doc, invoice) {
   doc
     .fillColor("#444444")
     .fontSize(20)
-    .font("./Roboto-Medium.ttf")
+    .font(fontMediumPath)
     .text("Faktúra", 50, 205);
 
   generateHr(doc, 235);
@@ -63,9 +72,9 @@ function generateCustomerInformation(doc, invoice) {
   doc
     .fontSize(10)
     .text("Číslo:", 50, customerInformationTop)
-    .font("./Roboto-Bold.ttf")
+    .font(fontBoldPath)
     .text(invoice.invoice_nr, 150, customerInformationTop)
-    .font("./Roboto-Medium.ttf")
+    .font(fontMediumPath)
     .text("Dátum vystavenia:", 50, customerInformationTop + 15)
     .text(formatDate(new Date(), 0), 150, customerInformationTop + 15)
     .text("Dátum dodania:", 50, customerInformationTop + 30)
@@ -88,7 +97,7 @@ function generateInvoiceTable(doc, invoice) {
   let i;
   const invoiceTableTop = 360;
 
-  doc.font("./Roboto-Bold.ttf");
+  doc.font(fontBoldPath);
   generateTableRow(
     doc,
     invoiceTableTop,
@@ -100,7 +109,7 @@ function generateInvoiceTable(doc, invoice) {
     "Spolu s DPH"
   );
   generateHr(doc, invoiceTableTop + 20);
-  doc.font("./Roboto-Medium.ttf");
+  doc.font(fontMediumPath);
 
   for (i = 0; i < invoice.items.length; i++) {
     const item = invoice.items[i];
@@ -155,7 +164,7 @@ function generateInvoiceTable(doc, invoice) {
   );
 
   const duePosition = paidToDatePosition + 40;
-  doc.font("./Roboto-Bold.ttf");
+  doc.font(fontBoldPath);
   generateTableRow(
     doc,
     duePosition,
@@ -171,7 +180,7 @@ function generateInvoiceTable(doc, invoice) {
 }
 
 function generateFooter(doc) {
-  doc.font("./Roboto-Bold.ttf").fontSize(10).text("Strana 1/1", 50, 780, {
+  doc.font(fontBoldPath).fontSize(10).text("Strana 1/1", 50, 780, {
     align: "center",
     width: 500,
   });

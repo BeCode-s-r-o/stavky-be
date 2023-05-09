@@ -1,17 +1,14 @@
-require("dotenv").config();
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 const express = require("express");
 const bodyparser = require("body-parser");
-
-const PDFDocument = require("pdfkit");
+const Sentry = require("@sentry/node");
 const { createInvoice } = require("./createInvoice.js");
 const { createEmailTemplate } = require("./createEmailTemplate");
-const { InvoiceNumber } = require("invoice-number");
 const uuid = require("uuid").v4;
 const fs = require("fs");
 const cors = require("cors");
-const { text } = require("express");
 const { storeItems } = require("./storeItems.js");
-const sha1 = require("js-sha1");
 const admin = require("firebase-admin");
 const credentials = require("./key.json");
 const nodemailer = require("nodemailer");
@@ -31,7 +28,7 @@ function formatDate(date) {
 
   return day + "." + month + "." + year;
 }
-// post request
+
 app.post("/checkout", async (req, res) => {
   let error, status;
 
@@ -77,6 +74,7 @@ app.post("/checkout", async (req, res) => {
           number: order.data().number + 1,
         });
       } catch (err) {
+        Sentry.captureException(err);
         console.log(err);
       }
 
@@ -135,28 +133,28 @@ app.post("/checkout", async (req, res) => {
           dátum: formatDate(new Date()),
         });
       } catch (err) {
+        Sentry.captureException(err);
         console.log(err);
       }
 
-      // create reusable transporter object using the default SMTP transport
       let transporter = nodemailer.createTransport({
         host: "smtp.m1.websupport.sk",
         port: 465,
-        secure: true, // true for 465, false for other ports
+        secure: true,
         auth: {
           user: isForex
             ? "info@forexporadenstvo.sk"
-            : "info@stavkoveporadenstvo.sk", // generated ethereal user
-          pass: process.env.ACOUNT_PASSWORD, // generated ethereal password
+            : "info@stavkoveporadenstvo.sk",
+          pass: process.env.ACOUNT_PASSWORD,
         },
       });
-      // send mail with defined transport object
+
       let info = await transporter.sendMail({
         from: isForex
           ? `"Objednávka č. ${invoiceNumber} | Forex Poradenstvo" <info@forexporadenstvo.sk>`
-          : `"Objednávka č. ${invoiceNumber} | Stavkove Poradenstvo" <info@stavkoveporadenstvo.sk>`, // sender address
-        to: token.email, // list of receivers
-        subject: "Vaša Objednávka", // Subject line
+          : `"Objednávka č. ${invoiceNumber} | Stavkove Poradenstvo" <info@stavkoveporadenstvo.sk>`,
+        to: token.email,
+        subject: "Vaša Objednávka",
         html: htmlMessage,
         bcc: isForex
           ? "info@forexporadenstvo.sk"
@@ -188,14 +186,17 @@ app.post("/checkout", async (req, res) => {
         }
       });
       console.log("Odoslané: %s", JSON.stringify(info, null, 2));
-      // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
     }
 
-    sendEmail().catch(console.error);
+    sendEmail().catch((err) => {
+      Sentry.captureException(err);
+      console.log(err);
+    });
 
     status = "success";
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    Sentry.captureException(err);
+    console.log(err);
     status = "failure";
     return;
   }
