@@ -1,0 +1,30 @@
+{
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "easyinvoice": "^2.3.3",
+    "env": "^0.0.2",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.3.0",
+    "invoice-number": "^2.0.1",
+    "js-sha1": "^0.6.0",
+    "nodemailer": "^6.8.0",
+    "pdfkit": "^0.13.0",
+    "qrcode": "^1.5.1",
+    "stripe": "^11.1.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  },
+  "name": "server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "devStart": "nodemon server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
