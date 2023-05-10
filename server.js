@@ -26,6 +26,14 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
+process.on("unhandledRejection", (reason) => {
+  Sentry.captureException(reason);
+});
+
+process.on("uncaughtException", (error) => {
+  Sentry.captureException(error);
+});
+
 function formatDate(date) {
   const day = date.getDate();
   const month = date.getMonth() + 1;
