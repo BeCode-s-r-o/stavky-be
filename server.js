@@ -73,10 +73,9 @@ app.post("/checkout", async (req, res) => {
     });
 
     async function sendEmail() {
-      var invoiceNumber = "0" + order.data().number;
       const transaction = Sentry.startTransaction({
         op: "sendEmail",
-        name: "Invoice number " + invoiceNumber,
+        name: "sendEmail",
       });
       try {
         const docRef = await db
@@ -86,7 +85,7 @@ app.post("/checkout", async (req, res) => {
           .collection("cislo-objednavky")
           .doc("invoiceNumber")
           .get();
-
+        var invoiceNumber = "0" + order.data().number;
         await docRef.set({
           number: order.data().number + 1,
         });
