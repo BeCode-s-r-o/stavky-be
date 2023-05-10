@@ -73,6 +73,7 @@ app.post("/checkout", async (req, res) => {
     });
 
     async function sendEmail() {
+      var invoiceNumber = 0;
       const transaction = Sentry.startTransaction({
         op: "sendEmail",
         name: "sendEmail",
@@ -85,7 +86,7 @@ app.post("/checkout", async (req, res) => {
           .collection("cislo-objednavky")
           .doc("invoiceNumber")
           .get();
-        var invoiceNumber = "0" + order.data().number;
+        invoiceNumber = "0" + order.data().number;
         await docRef.set({
           number: order.data().number + 1,
         });
@@ -198,18 +199,9 @@ app.post("/checkout", async (req, res) => {
           },
         ].filter((i) => i.send),
       });
-      const faPath = path.join(
-        __dirname,
-        `Faktúra č.${invoiceNumber + ".pdf"}`
-      );
-      fs.unlink(faPath, (err) => {
-        if (err) {
-          console.log(err);
-          Sentry.captureException(err);
-          throw err;
-        }
-      });
+
       console.log("Odoslané: %s", JSON.stringify(info, null, 2));
+      Sentry.captureMessage(info);
     }
 
     sendEmail().catch((err) => {
