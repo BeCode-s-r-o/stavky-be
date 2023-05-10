@@ -21,6 +21,11 @@ app.use(bodyparser.urlencoded({ extended: false }));
 app.use(bodyparser.json());
 const PORT = 5500;
 
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  tracesSampleRate: 1.0,
+});
+
 function formatDate(date) {
   const day = date.getDate();
   const month = date.getMonth() + 1;
@@ -60,6 +65,11 @@ app.post("/checkout", async (req, res) => {
     });
 
     async function sendEmail() {
+      var invoiceNumber = "0" + order.data().number;
+      const transaction = Sentry.startTransaction({
+        op: "sendEmail",
+        name: "Invoice number " + invoiceNumber,
+      });
       try {
         const docRef = await db
           .collection("cislo-objednavky")
@@ -69,13 +79,14 @@ app.post("/checkout", async (req, res) => {
           .doc("invoiceNumber")
           .get();
 
-        var invoiceNumber = "0" + order.data().number;
         await docRef.set({
           number: order.data().number + 1,
         });
       } catch (err) {
         Sentry.captureException(err);
         console.log(err);
+      } finally {
+        transaction.finish();
       }
 
       const htmlMessage = createEmailTemplate({
@@ -182,6 +193,8 @@ app.post("/checkout", async (req, res) => {
       });
       fs.unlink(`Faktúra č.${invoiceNumber + ".pdf"}`, (err) => {
         if (err) {
+          console.log(err);
+          Sentry.captureException(err);
           throw err;
         }
       });
