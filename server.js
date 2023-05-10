@@ -191,7 +191,11 @@ app.post("/checkout", async (req, res) => {
           },
         ].filter((i) => i.send),
       });
-      fs.unlink(`Faktúra č.${invoiceNumber + ".pdf"}`, (err) => {
+      const faPath = path.join(
+        __dirname,
+        `Faktúra č.${invoiceNumber + ".pdf"}`
+      );
+      fs.unlink(faPath, (err) => {
         if (err) {
           console.log(err);
           Sentry.captureException(err);
