@@ -120,7 +120,7 @@ function generateInvoiceTable(doc, invoice) {
       item.item,
       item.duration,
       item.quantity,
-      formatCurrency(item.amount * 0.8),
+      formatCurrency(item.amount - item.amount / 1.2),
       "20%",
       formatCurrency(item.amount)
     );
@@ -137,7 +137,7 @@ function generateInvoiceTable(doc, invoice) {
     "",
     "Základ DPH 20%",
     "",
-    formatCurrency(invoice.subtotal * 0.8)
+    formatCurrency(invoice.subtotal / 1.2)
   );
 
   const paidToDatePosition = subtotalPosition + 20;
@@ -149,7 +149,7 @@ function generateInvoiceTable(doc, invoice) {
     "",
     "DPH 20%",
     "",
-    formatCurrency(invoice.subtotal * 0.2)
+    formatCurrency(invoice.subtotal - invoice.subtotal / 1.2)
   );
   const discountPosition = paidToDatePosition + 20;
   generateTableRow(
